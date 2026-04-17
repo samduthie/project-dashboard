@@ -1,0 +1,22 @@
+{
+  "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/0.14.0/.schema/devbox.schema.json",
+  "packages": ["python@3.12", "nodejs@22"],
+  "shell": {
+    "init_hook": [
+      "export PYTHONPATH=\"${PYTHONPATH:-}:$(pwd)/backend\""
+    ],
+    "scripts": {
+      "backend": "ROOT=\"$(pwd)\"; . ./scripts/load-env.inc && cd \"$ROOT/backend\" && . .venv/bin/activate && python manage.py migrate --noinput && python manage.py runserver \"0.0.0.0:${BACKEND_PORT}\"",
+      "backend-stable": "ROOT=\"$(pwd)\"; . ./scripts/load-env.inc && cd \"$ROOT/backend\" && . .venv/bin/activate && python manage.py migrate --noinput && python manage.py runserver \"0.0.0.0:${BACKEND_PORT}\" --noreload",
+      "frontend": "ROOT=\"$(pwd)\"; . ./scripts/load-env.inc && cd \"$ROOT/frontend\" && npm run dev",
+      "frontend-stable": "ROOT=\"$(pwd)\"; . ./scripts/load-env.inc && cd \"$ROOT/frontend\" && npm run build && npm run preview -- --host 0.0.0.0 --port \"${FRONTEND_PORT}\" --strictPort",
+      "install-backend": [
+        "cd backend && python -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt"
+      ],
+      "install-frontend": ["cd frontend && npm install"],
+      "install-all": ["devbox run install-backend", "devbox run install-frontend"],
+      "dev": "sh scripts/dev.sh",
+      "dev-stable": "sh scripts/dev-stable.sh"
+    }
+  }
+}
