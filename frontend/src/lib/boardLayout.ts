@@ -28,6 +28,24 @@ export function layoutBodyFromItems(items: Record<BoardSection, string[]>) {
   }
 }
 
+/** Apply drag result to project rows so UI matches `items` before the server responds. */
+export function applyLayoutItemsToProjects(
+  projectList: ProjectOut[],
+  items: Record<BoardSection, string[]>,
+): ProjectOut[] {
+  const placement = new Map<number, { section: BoardSection; order: number }>()
+  for (const section of BOARD_CONTAINERS) {
+    items[section].forEach((idStr, idx) => {
+      placement.set(Number(idStr), { section, order: idx })
+    })
+  }
+  return projectList.map((p) => {
+    const pos = placement.get(p.id)
+    if (!pos) return p
+    return { ...p, board_section: pos.section, board_order: pos.order }
+  })
+}
+
 export function findContainerForId(
   id: string,
   items: Record<BoardSection, string[]>,

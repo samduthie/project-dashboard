@@ -43,6 +43,8 @@ export default function App() {
   const [menu, setMenu] = useState<ContextMenuState>(null)
   const [toast, setToast] = useState<string | null>(null)
   const [loadError, setLoadError] = useState<string | null>(null)
+  /** False until the first listProjects (with settings) finishes — avoids empty-state flash on refresh. */
+  const [projectsReady, setProjectsReady] = useState(false)
 
   const [search, setSearch] = useState('')
   const [filter, setFilter] = useState<FilterChip>('all')
@@ -97,6 +99,8 @@ export default function App() {
       } catch (e) {
         if (!cancelled)
           setLoadError(e instanceof Error ? e.message : 'Failed to load')
+      } finally {
+        if (!cancelled) setProjectsReady(true)
       }
     })()
     return () => {
@@ -338,7 +342,13 @@ export default function App() {
             </p>
           ) : null}
 
-          {projects.length === 0 && !loadError ? (
+          {!projectsReady && !loadError ? (
+            <p className="text-center text-zinc-500 dark:text-zinc-400" aria-busy="true">
+              Loading projects…
+            </p>
+          ) : null}
+
+          {projectsReady && projects.length === 0 && !loadError ? (
             <p className="text-center text-zinc-600 dark:text-zinc-400">
               No projects yet. Open{' '}
               <button
@@ -358,7 +368,7 @@ export default function App() {
             </p>
           ) : null}
 
-          {projects.length > 0 && !loadError ? (
+          {projectsReady && projects.length > 0 && !loadError ? (
             <DashboardBoard
               projects={projects}
               setProjects={setProjects}

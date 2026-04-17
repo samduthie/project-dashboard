@@ -14,6 +14,7 @@ import { ChevronDown, ChevronRight, GripVertical } from 'lucide-react'
 import type { BoardSection, ListeningPortOut, ProjectOut } from '../api/types'
 import { saveDashboardLayout } from '../api/client'
 import {
+  applyLayoutItemsToProjects,
   BOARD_CONTAINERS,
   findContainerForId,
   layoutBodyFromItems,
@@ -241,16 +242,23 @@ export function DashboardBoard({
   )
 
   const persistLayout = useCallback(
-    async (next: Record<BoardSection, string[]>) => {
+    async (
+      next: Record<BoardSection, string[]>,
+      rollback: {
+        items: Record<BoardSection, string[]>
+        projects: ProjectOut[]
+      },
+    ) => {
       try {
         const out = await saveDashboardLayout(layoutBodyFromItems(next))
         setProjects(out)
       } catch (e) {
         onToast(e instanceof Error ? e.message : 'Could not save layout')
-        setItems(splitIdsFromProjects(projects))
+        setItems(rollback.items)
+        setProjects(rollback.projects)
       }
     },
-    [projects, setProjects, onToast],
+    [setProjects, onToast],
   )
 
   const handleDragEnd = useCallback(
@@ -262,10 +270,19 @@ export function DashboardBoard({
       const overId = String(over.id)
       const next = applyDragEnd(items, activeId, overId)
       if (!next) return
+      const rollback = {
+        items: {
+          starred: [...items.starred],
+          projects: [...items.projects],
+          archived: [...items.archived],
+        },
+        projects: projects.map((p) => ({ ...p })),
+      }
       setItems(next)
-      void persistLayout(next)
+      setProjects((prev) => applyLayoutItemsToProjects(prev, next))
+      void persistLayout(next, rollback)
     },
-    [items, persistLayout, dragDisabled],
+    [items, projects, persistLayout, dragDisabled, setProjects],
   )
 
   const gridClass =
